@@ -54,3 +54,5 @@ env.bak/
 venv.bak/
 reports/
 app.log
+.env.example
+data/
