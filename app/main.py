@@ -1,24 +1,30 @@
 import asyncio
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from contextlib import asynccontextmanager
-from app.services.wcmc.product import ProductService
 
+from app.agents.zoho import ZohoAgent
+from app.agents.postgres import PostgresAgent
+from app.services.wcmc.product import ProductService
+from app.services.zoho.item import ItemService
+from app.api.v1.oauth import zoho_router
+from app.services.wcmc.category import CategoryService
+from app.services.zoho.category import ZohoCategoryService
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Create the task but don't await it
-    product_task = asyncio.create_task(ProductService().check_duplicated_name_variable_products())
+    category_task = asyncio.create_task(ZohoCategoryService().create_category())
     
     # Store the task in app state and continue immediately
-    app.state.product_task = product_task
+    app.state.category_task = category_task
     
     # Add error handling for the background task
     async def monitor_task():
         try:
-            result = await product_task
-            print("Product fetch completed:", result)
+            result = await category_task
+            print("Category fetch completed:", result)
         except Exception as e:
-            print(f"Product fetch failed: {e}")
+            print(f"Category fetch failed: {e}")
     
     # Start the monitoring task without waiting
     asyncio.create_task(monitor_task())
@@ -26,10 +32,10 @@ async def lifespan(app: FastAPI):
     yield
     
     # Cleanup
-    if not product_task.done():
-        product_task.cancel()
+    if not category_task.done():
+        category_task.cancel()
         try:
-            await product_task
+            await category_task
         except asyncio.CancelledError:
             pass
 
@@ -39,3 +45,4 @@ app = FastAPI(lifespan=lifespan)
 async def root():
     return {"message": "Hello World"}
 
+app.include_router(zoho_router, prefix="/api/v1")
