@@ -331,7 +331,7 @@ class CRUDService:
             # Save the order first
             db_order = await self.postgres.insert_order(order_base)
             if not db_order:
-                return False
+                return False, order_base
             
             # Save each line item
             for item in order_data["line_items"]:
@@ -351,10 +351,10 @@ class CRUDService:
                 )
                 await self.postgres.insert_order_line(line_item)
             
-            return db_order
+            return True, db_order
         except Exception as e:
             print(f"Error inserting order: {e}")
-            return False
+            return False, order_base
 
     async def create_orders(self):
         count = 1
@@ -369,11 +369,11 @@ class CRUDService:
                 
             for order in orders:
                 print(f"Processing order {order['id']}")
-                result = await self._save_order(order)
-                if result:
+                success, failed_order = await self._save_order(order)
+                if success:
                     success_count += 1
                 else:
-                    failed_orders.append(order)
+                    failed_orders.append(failed_order)
                     failed_count += 1
                 total_count += 1
                 

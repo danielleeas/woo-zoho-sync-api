@@ -238,5 +238,69 @@ class PostgresAgent:
         except Exception as e:
             raise Exception(f"Database error: {str(e)}")
         return None
-                    
+    
+    async def get_products(self, page: int = 1, per_page: int = 10, filters: dict = None):
+        async for db in get_session():
+            query = select(Product)
+            
+            # Apply dynamic filters if any
+            if filters:
+                for field, value in filters.items():
+                    if hasattr(Product, field):
+                        query = query.where(getattr(Product, field) == value)
+            
+            # Add pagination
+            query = query.offset((page - 1) * per_page).limit(per_page)
+            
+            result = (await db.exec(query)).all()
+            return result
+        return None
+    
+    async def get_product(self, product_id: int):
+        async for db in get_session():
+            statement = select(Product).where(Product.id == product_id)
+            result = (await db.exec(statement)).first()
+            return result
+        return None
+    
+    async def search_products_by_name(self, query: str, page: int = 1, per_page: int = 10) -> list[Product]:
+        async for db in get_session():
+            search_term = f"%{query}%"  # Add wildcards for LIKE query
+            statement = select(Product).where(Product.name.ilike(search_term)) \
+                                     .offset((page - 1) * per_page) \
+                                     .limit(per_page)
+            result = (await db.exec(statement)).all()
+            return result
+        return None
+    
+    async def get_orders(self, page: int = 1, per_page: int = 10, filters: dict = None):
+        async for db in get_session():
+            # Join Order with LineItems
+            query = select(Order, LineItems).join(LineItems, Order.id == LineItems.order_id, isouter=True)
+            
+            # Apply dynamic filters if any
+            if filters:
+                for field, value in filters.items():
+                    if hasattr(Order, field):
+                        query = query.where(getattr(Order, field) == value)
+            
+            # Add pagination
+            query = query.offset((page - 1) * per_page).limit(per_page)
+            
+            # Execute query and fetch results
+            results = (await db.exec(query)).all()
+            
+            # Process results to create a dictionary with orders and their line items
+            orders_dict = {}
+            for order, line_item in results:
+                if order.id not in orders_dict:
+                    order_dict = order.model_dump()
+                    order_dict['line_items'] = []
+                    orders_dict[order.id] = order_dict
+                
+                if line_item:
+                    orders_dict[order.id]['line_items'].append(line_item.model_dump())
+            
+            return list(orders_dict.values())
+        return None
         

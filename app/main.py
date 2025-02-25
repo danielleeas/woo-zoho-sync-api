@@ -2,8 +2,11 @@ import asyncio
 from fastapi import FastAPI, Request
 from contextlib import asynccontextmanager
 
-from app.api.v1.oauth import zoho_router
 from app.services.crud import CRUDService
+
+from app.api.v1.oauth import zoho_router
+from app.api.v1.product import product_router
+from app.api.v1.order import order_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -42,3 +45,5 @@ async def root():
     return {"message": "Hello World"}
 
 app.include_router(zoho_router, prefix="/api/v1")
+app.include_router(product_router, prefix="/api/v1")
+app.include_router(order_router, prefix="/api/v1")
