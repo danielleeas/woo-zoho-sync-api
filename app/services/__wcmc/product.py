@@ -1,4 +1,7 @@
 import json, os
+import unicodedata
+from bs4 import BeautifulSoup
+
 from app.agents.wcmc import WCMC
 
 class ProductService:
@@ -14,7 +17,7 @@ class ProductService:
             products_per_file = 100
             params = {
                 "status": "publish",
-                "type": "variable"
+                "type": "simple"
             }
             while True:
                 try:
@@ -23,7 +26,7 @@ class ProductService:
                         break
                     products.extend(page_products)
                     while len(products) >= products_per_file:
-                        filename = f"data/wcmc/variable/products_{current_file_number}.json"
+                        filename = f"data/wcmc/simple/products_{current_file_number}.json"
                         batch = products[:products_per_file]
                         products = products[products_per_file:]
                         
@@ -38,14 +41,14 @@ class ProductService:
                     return {"error": str(e), "last_successful_page": page - 1}
             
             if products:  # Save any remaining products
-                filename = f"data/wcmc/variable/products_{current_file_number}.json"
+                filename = f"data/wcmc/simple/products_{current_file_number}.json"
                 with open(filename, 'w', encoding='utf-8') as f:
                     json.dump(products, f, indent=4, ensure_ascii=False)
                 print(f"Saved {filename}")
                 
             return {
                 "success": True,
-                "message": f"Products saved to data/wcmc/variable/products_1.json through data/wcmc/variable/products_{current_file_number}.json"
+                "message": f"Products saved to data/wcmc/simple/products_1.json through data/wcmc/simple/products_{current_file_number}.json"
             }
             
         except Exception as e:
@@ -66,10 +69,10 @@ class ProductService:
         current_file_number = 1
         while True:
             
-            if not os.path.exists(f"data/wcmc/total/products_{count}.json"):
+            if not os.path.exists(f"data/wcmc/simple/products_{count}.json"):
                 break
             
-            with open(f"data/wcmc/total/products_{count}.json", "r") as f:
+            with open(f"data/wcmc/simple/products_{count}.json", "r") as f:
                 products = json.load(f)
                 
             for product in products:
@@ -81,7 +84,7 @@ class ProductService:
                 product.pop('yoast_head_json', None)
                 cleaned_products.append(product)
                 while len(cleaned_products) >= products_per_file:
-                    filename = f"data/wcmc/cleaned/cleaned_products_{current_file_number}.json"
+                    filename = f"data/wcmc/cleaned/products_{current_file_number}.json"
                     batch = cleaned_products[:products_per_file]
                     cleaned_products = cleaned_products[products_per_file:]
                     
@@ -93,23 +96,99 @@ class ProductService:
                 
             count += 1
         if cleaned_products:
-            filename = f"data/wcmc/cleaned/cleaned_products_{current_file_number}.json"
+            filename = f"data/wcmc/cleaned/products_{current_file_number}.json"
             with open(filename, 'w', encoding='utf-8') as f:
                 json.dump(cleaned_products, f, indent=4, ensure_ascii=False)
             print(f"Saved {filename}")
         
-        print(f"Products cleaned and saved to cleaned_products_1.json through cleaned_products_{current_file_number}.json")
+        print(f"Products cleaned and saved to products_1.json through products_{current_file_number}.json")
         return {"success": True, "message": "Products cleaned successfully"}
+    
+    async def clear_products_description(self):
+        described_products = []
+        count = 1
+        products_per_file = 100
+        current_file_number = 1
+        while True:
+            if not os.path.exists(f"data/wcmc/simple/products_{count}.json"):
+                break
+            
+            with open(f"data/wcmc/simple/products_{count}.json", "r") as f:
+                products = json.load(f)
+                
+            for product in products:
+                final_description = ""
+                if product["description"] or product["short_description"]:
+                    text = product["description"] or product["short_description"]
+                    soup = BeautifulSoup(text, 'html.parser')
+                    # Clean text of emojis and invalid characters
+                    plain_text = soup.get_text(separator=' ').strip()
+                    # Remove non-BMP characters, convert special characters to ASCII, and remove < >
+                    cleaned_text = unicodedata.normalize('NFKD', plain_text).encode('ascii', 'ignore').decode('ascii')
+                    cleaned_text = cleaned_text.replace('<', '').replace('>', '')
+                    truncated_description = cleaned_text[:2000]
+                    final_description = truncated_description
+                else:
+                    final_description = "No Description"
+                    
+                product['description'] = final_description if final_description != "" else "No Description"
+                described_products.append(product)
+                
+                while len(described_products) >= products_per_file:
+                    filename = f"data/wcmc/described/products_{current_file_number}.json"
+                    batch = described_products[:products_per_file]
+                    described_products = described_products[products_per_file:]
+                    
+                    with open(filename, 'w', encoding='utf-8') as f:
+                        json.dump(batch, f, indent=4, ensure_ascii=False)
+                    
+                    print(f"Saved {filename}")
+                    current_file_number += 1
+            
+            count += 1
+        
+        if described_products:
+            filename = f"data/wcmc/described/products_{current_file_number}.json"
+            with open(filename, 'w', encoding='utf-8') as f:
+                json.dump(described_products, f, indent=4, ensure_ascii=False)
+            print(f"Saved {filename}")
+        
+        print(f"Products described and saved to products_1.json through products_{current_file_number}.json")
+        return {"success": True, "message": "Products described successfully"}
+            
+    async def check_null_sku(self):
+        null_sku_products = []
+        count = 1
+        while True:
+            if not os.path.exists(f"data/wcmc/final/products_{count}.json"):
+                break
+            
+            with open(f"data/wcmc/final/products_{count}.json", "r") as f:
+                products = json.load(f)
+                
+            for product in products:
+                if product["sku"] == "":
+                    null_sku_products.append(product)
+            count += 1
+            
+        if null_sku_products:
+            filename = f"data/wcmc/null_sku/null_sku_products.json"
+            with open(filename, 'w', encoding='utf-8') as f:
+                json.dump(null_sku_products, f, indent=4, ensure_ascii=False)
+            print(f"Saved {filename}")
+            
+        return {"success": True, "message": "Products with null SKU saved to products_1.json through products_{count}.json"}
     
     async def search_duplicate_sku(self):
         duplicate_sku_list = []
         count = 1
         sku_list = []
+        unique_sku_products = []
         while True:
-            if not os.path.exists(f"data/wcmc/cleaned/cleaned_products_{count}.json"):
+            if not os.path.exists(f"data/wcmc/simple/products_{count}.json"):
                 break
             
-            with open(f"data/wcmc/cleaned/cleaned_products_{count}.json", "r") as f:
+            with open(f"data/wcmc/simple/products_{count}.json", "r") as f:
                 products = json.load(f)
                 
             for product in products:
@@ -122,15 +201,17 @@ class ProductService:
         duplicate_sku_products = []
         new_count = 1
         while True:
-            if not os.path.exists(f"data/wcmc/cleaned/cleaned_products_{new_count}.json"):
+            if not os.path.exists(f"data/wcmc/simple/products_{new_count}.json"):
                 break
             
-            with open(f"data/wcmc/cleaned/cleaned_products_{new_count}.json", "r") as f:
+            with open(f"data/wcmc/simple/products_{new_count}.json", "r") as f:
                 products = json.load(f)
                 
             for product in products:
                 if product['sku'] in duplicate_sku_list:
                     duplicate_sku_products.append(product)
+                else:
+                    unique_sku_products.append(product)
             new_count += 1
             
         
@@ -140,6 +221,27 @@ class ProductService:
                 json.dump(duplicate_sku_products, f, indent=4, ensure_ascii=False)
             print(f"Saved {filename}")
             
+        if unique_sku_products:
+            products_per_file = 100
+            current_file_number = 1
+            
+            while len(unique_sku_products) >= products_per_file:
+                filename = f"data/wcmc/unique_sku/products_{current_file_number}.json"
+                batch = unique_sku_products[:products_per_file]
+                unique_sku_products = unique_sku_products[products_per_file:]
+                
+                with open(filename, 'w', encoding='utf-8') as f:
+                    json.dump(batch, f, indent=4, ensure_ascii=False)
+                print(f"Saved {filename}")
+                current_file_number += 1
+            
+            # Save any remaining products
+            if unique_sku_products:
+                filename = f"data/wcmc/unique_sku/products_{current_file_number}.json"
+                with open(filename, 'w', encoding='utf-8') as f:
+                    json.dump(unique_sku_products, f, indent=4, ensure_ascii=False)
+                print(f"Saved {filename}")
+            
         return f"Duplicate SKUs saved to duplicate_sku_products_{new_count}.json"
     
     async def search_duplicate_name(self):
@@ -147,10 +249,10 @@ class ProductService:
         count = 1
         name_list = []
         while True:
-            if not os.path.exists(f"data/wcmc/cleaned/cleaned_products_{count}.json"):
+            if not os.path.exists(f"data/wcmc/simple/products_{count}.json"):
                 break
             
-            with open(f"data/wcmc/cleaned/cleaned_products_{count}.json", "r") as f:
+            with open(f"data/wcmc/simple/products_{count}.json", "r") as f:
                 products = json.load(f)
                 
             for product in products:
@@ -162,10 +264,10 @@ class ProductService:
         duplicate_name_products = []
         new_count = 1
         while True:
-            if not os.path.exists(f"data/wcmc/cleaned/cleaned_products_{new_count}.json"):
+            if not os.path.exists(f"data/wcmc/simple/products_{new_count}.json"):
                 break
             
-            with open(f"data/wcmc/cleaned/cleaned_products_{new_count}.json", "r") as f:
+            with open(f"data/wcmc/simple/products_{new_count}.json", "r") as f:
                 products = json.load(f)
                 
             for product in products:

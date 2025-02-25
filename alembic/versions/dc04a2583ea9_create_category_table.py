@@ -24,12 +24,7 @@ def upgrade() -> None:
         "categories",
         sa.Column("id", postgresql.UUID(as_uuid=True), default=sa.text('uuid_generate_v4()'), nullable=False),
         sa.Column("name", sa.String(), nullable=False),
-        sa.Column("woo_id", sa.Integer(), nullable=False),
-        sa.Column("woo_parent_id", sa.Integer(), nullable=False),
-        sa.Column("zoho_id", sa.String(), nullable=False),
-        sa.Column("zoho_parent_id", sa.String(), nullable=False),
-        sa.Column("description", sa.String(), nullable=False),
-        sa.Column("url", sa.String(), nullable=False),
+        sa.Column("slug", sa.String(), nullable=False),
         sa.PrimaryKeyConstraint("id"),
     )
 

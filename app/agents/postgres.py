@@ -44,12 +44,7 @@ class PostgresAgent:
         async for db in get_session():
             db_category = Category(
                 name=category.name,
-                description=category.description,
-                url=category.url,
-                woo_id=category.woo_id,
-                woo_parent_id=category.woo_parent_id,
-                zoho_id=category.zoho_id,
-                zoho_parent_id=category.zoho_parent_id
+                slug=category.slug,
             )
             db.add(db_category)
             await db.commit()

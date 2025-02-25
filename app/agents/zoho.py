@@ -185,3 +185,17 @@ class ZohoAgent:
         json_data = data.decode('utf-8')  # Convert bytes to string
         print(json_data)
         return json.loads(json_data)
+    
+    async def get_taxes(self):
+        access_token = await self.get_access_token()
+        
+        conn = http.client.HTTPSConnection("www.zohoapis.eu")
+        
+        headers = { 'Authorization': f"Zoho-oauthtoken {access_token}" }
+        
+        conn.request("GET", f"/inventory/v1/settings/taxes?organization_id={settings.ZOHO_ORGANIZATION_ID}", headers=headers)
+        
+        res = conn.getresponse()
+        data = res.read()
+        json_data = data.decode('utf-8')  # Convert bytes to string
+        return json.loads(json_data)
