@@ -6,6 +6,9 @@ from app.agents.wcmc import WCMC
 from app.agents.postgres import PostgresAgent
 from app.models.category import CategoryBase
 from app.models.product import ProductBase
+from app.models.customer import CustomerBase
+from app.models.order import OrderBase
+from app.models.line_items import LineItemsBase
 
 class CRUDService:
     def __init__(self):
@@ -271,4 +274,217 @@ class CRUDService:
         
         print(f"Final totals - Total: {total_count}, Success: {success_count}, Failed: {failed_count}")
         return total_count
+    
+    async def _save_order(self, order_data):
+        """Helper method to create and save an order and its line items"""
+        order_base = OrderBase(
+            customer_id=order_data["customer_id"],
+            currency=order_data["currency"],
+            total=order_data["total"],
+            order_key=order_data["order_key"],
+            prices_include_tax=order_data["prices_include_tax"],
+            discount_total=order_data["discount_total"],
+            discount_tax=order_data["discount_tax"],
+            shipping_total=order_data["shipping_total"],
+            shipping_tax=order_data["shipping_tax"],
+            cart_tax=order_data["cart_tax"],
+            total_tax=order_data["total_tax"],
+            billing_first_name=order_data["billing"]["first_name"],
+            billing_last_name=order_data["billing"]["last_name"],
+            billing_company=order_data["billing"]["company"],
+            billing_address_1=order_data["billing"]["address_1"],
+            billing_address_2=order_data["billing"]["address_2"],
+            billing_city=order_data["billing"]["city"],
+            billing_state=order_data["billing"]["state"],
+            billing_postcode=order_data["billing"]["postcode"],
+            billing_country=order_data["billing"]["country"],
+            billing_email=order_data["billing"]["email"],
+            billing_phone=order_data["billing"]["phone"],
+            shipping_first_name=order_data["shipping"]["first_name"],
+            shipping_last_name=order_data["shipping"]["last_name"],
+            shipping_company=order_data["shipping"]["company"],
+            shipping_address_1=order_data["shipping"]["address_1"],
+            shipping_address_2=order_data["shipping"]["address_2"],
+            shipping_city=order_data["shipping"]["city"],
+            shipping_state=order_data["shipping"]["state"],
+            shipping_postcode=order_data["shipping"]["postcode"],
+            shipping_country=order_data["shipping"]["country"],
+            payment_method=order_data["payment_method"],
+            payment_method_title=order_data["payment_method_title"],
+            transaction_id=order_data["transaction_id"],
+            customer_ip_address=order_data["customer_ip_address"],
+            customer_user_agent=order_data["customer_user_agent"],
+            created_via=order_data["created_via"],
+            customer_note=order_data["customer_note"],
+            date_completed=order_data["date_completed"],
+            date_created=order_data["date_created"],
+            date_modified=order_data["date_modified"],
+            date_paid=order_data["date_paid"],
+            cart_hash=order_data["cart_hash"],
+            number=order_data["number"],
+            payment_url=order_data["payment_url"],
+            currency_symbol=order_data["currency_symbol"],
+            
+        )
+        
+        try:
+            # Save the order first
+            db_order = await self.postgres.insert_order(order_base)
+            if not db_order:
+                return False
+            
+            # Save each line item
+            for item in order_data["line_items"]:
+                line_item = LineItemsBase(
+                    order_id=db_order.id,
+                    name=item["name"],
+                    product_id=item["product_id"],
+                    variation_id=item["variation_id"],
+                    quantity=item["quantity"],
+                    tax_class=item["tax_class"],
+                    subtotal=item["subtotal"],
+                    subtotal_tax=item["subtotal_tax"],
+                    total=item["total"],
+                    total_tax=item["total_tax"],
+                    sku=item["sku"],
+                    price=int(float(item["price"])) if item["price"] else 0
+                )
+                await self.postgres.insert_order_line(line_item)
+            
+            return db_order
+        except Exception as e:
+            print(f"Error inserting order: {e}")
+            return False
+
+    async def create_orders(self):
+        count = 1
+        total_count = success_count = failed_count = 0
+        failed_orders = []
+        while True:
+            if not os.path.exists(f"data/wcmc/orders/orders_{count}.json"):
+                break
+            
+            with open(f"data/wcmc/orders/orders_{count}.json", "r") as f:
+                orders = json.load(f)
                 
+            for order in orders:
+                print(f"Processing order {order['id']}")
+                result = await self._save_order(order)
+                if result:
+                    success_count += 1
+                else:
+                    failed_orders.append(order)
+                    failed_count += 1
+                total_count += 1
+                
+            print(f"Orders file {count} - Total: {total_count}, Success: {success_count}, Failed: {failed_count}")
+            count += 1
+        
+        print(f"Final totals - Total: {total_count}, Success: {success_count}, Failed: {failed_count}")
+        return total_count
+    
+    async def get_customers(self):
+        page = 1
+        per_page = 20
+        customers = []
+        current_file_number = 1
+        customers_per_file = 100
+        
+        while True:
+            page_customers = await self.wcmc.get_customers(per_page, page)
+            if not page_customers:  # If no more customers are returned
+                break
+            
+            customers.extend(page_customers)
+            
+            # Write to file every 100 customers
+            while len(customers) >= customers_per_file:
+                filename = f"data/wcmc/customers/customers_{current_file_number}.json"
+                batch = customers[:customers_per_file]
+                customers = customers[customers_per_file:]
+                
+                with open(filename, 'w', encoding='utf-8') as f:
+                    json.dump(batch, f, indent=4, ensure_ascii=False)
+                
+                print(f"Saved {filename}")
+                current_file_number += 1
+            
+            page += 1
+        
+        # Write any remaining customers
+        if customers:
+            filename = f"data/wcmc/customers/customers_{current_file_number}.json"
+            with open(filename, 'w', encoding='utf-8') as f:
+                json.dump(customers, f, indent=4, ensure_ascii=False)
+            print(f"Saved {filename}")
+            
+        return f"Customers saved to customers_1.json through customers_{current_file_number}.json"
+    
+    async def _save_customer(self, customer_data):
+        """Helper method to create and save a customer"""
+        customer_base = CustomerBase(
+            woo_id=customer_data["id"],
+            first_name=customer_data["first_name"],
+            last_name=customer_data["last_name"],
+            username=customer_data["username"],
+            email=customer_data["email"],
+            billing_first_name=customer_data["billing"]["first_name"],
+            billing_last_name=customer_data["billing"]["last_name"],
+            billing_company=customer_data["billing"]["company"],
+            billing_address_1=customer_data["billing"]["address_1"],
+            billing_address_2=customer_data["billing"]["address_2"],
+            billing_city=customer_data["billing"]["city"],
+            billing_postcode=customer_data["billing"]["postcode"],
+            billing_country=customer_data["billing"]["country"],
+            billing_state=customer_data["billing"]["state"],
+            billing_email=customer_data["billing"]["email"],
+            billing_phone=customer_data["billing"]["phone"],
+            shipping_first_name=customer_data["shipping"]["first_name"],
+            shipping_last_name=customer_data["shipping"]["last_name"],
+            shipping_company=customer_data["shipping"]["company"],
+            shipping_address_1=customer_data["shipping"]["address_1"],
+            shipping_address_2=customer_data["shipping"]["address_2"],
+            shipping_city=customer_data["shipping"]["city"],
+            shipping_postcode=customer_data["shipping"]["postcode"],
+            shipping_country=customer_data["shipping"]["country"],
+            shipping_state=customer_data["shipping"]["state"],
+            shipping_phone=customer_data["shipping"]["phone"],
+            is_paying_customer=customer_data["is_paying_customer"],
+            avatar_url=customer_data["avatar_url"],
+            created_at=customer_data["date_created"],
+            updated_at=customer_data["date_modified"]
+        )
+        
+        try:
+            db_customer = await self.postgres.insert_customer(customer_base)
+            return db_customer
+        except Exception as e:
+            print(f"Error inserting customer: {e}")
+            return False
+    
+    async def create_customers(self):
+        count = 1
+        total_count = success_count = failed_count = 0
+        failed_customers = []
+        while True:
+            if not os.path.exists(f"data/wcmc/customers/customers_{count}.json"):
+                break
+            
+            with open(f"data/wcmc/customers/customers_{count}.json", "r") as f:
+                customers = json.load(f)
+                
+            for customer in customers:
+                db_customer = await self._save_customer(customer)
+                if db_customer:
+                    success_count += 1
+                else:
+                    failed_customers.append(customer)
+                    failed_count += 1
+                total_count += 1
+                
+            print(f"Customers level {count} - Total: {total_count}, Success: {success_count}, Failed: {failed_count}")
+            count += 1
+        
+        print(f"Final totals - Total: {total_count}, Success: {success_count}, Failed: {failed_count}")
+        return total_count
+    

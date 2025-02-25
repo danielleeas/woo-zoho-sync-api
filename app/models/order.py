@@ -1,0 +1,57 @@
+import uuid
+from typing import Optional, List
+from sqlmodel import SQLModel, Field
+from sqlalchemy import ARRAY, Column, String
+
+class OrderBase(SQLModel):
+    customer_id: int = Field(index=True, nullable=True)
+    currency: Optional[str] = Field(default="")
+    prices_include_tax: Optional[bool] = Field(default=True)
+    discount_total: Optional[str] = Field(default="")
+    discount_tax: Optional[str] = Field(default="")
+    shipping_total: Optional[str] = Field(default="")
+    shipping_tax: Optional[str] = Field(default="")
+    cart_tax: Optional[str] = Field(default="")
+    total: Optional[str] = Field(default="")
+    total_tax: Optional[str] = Field(default="")
+    order_key: Optional[str] = Field(default="")
+    billing_first_name: Optional[str] = Field(default="")
+    billing_last_name: Optional[str] = Field(default="")
+    billing_company: Optional[str] = Field(default="")
+    billing_address_1: Optional[str] = Field(default="")
+    billing_address_2: Optional[str] = Field(default="")
+    billing_city: Optional[str] = Field(default="")
+    billing_state: Optional[str] = Field(default="")
+    billing_postcode: Optional[str] = Field(default="")
+    billing_country: Optional[str] = Field(default="")
+    billing_phone: Optional[str] = Field(default="")
+    billing_email: Optional[str] = Field(default="")
+    shipping_first_name: Optional[str] = Field(default="")
+    shipping_last_name: Optional[str] = Field(default="")
+    shipping_company: Optional[str] = Field(default="")
+    shipping_address_1: Optional[str] = Field(default="")
+    shipping_address_2: Optional[str] = Field(default="")
+    shipping_city: Optional[str] = Field(default="")
+    shipping_state: Optional[str] = Field(default="")
+    shipping_postcode: Optional[str] = Field(default="")
+    shipping_country: Optional[str] = Field(default="")
+    payment_method: Optional[str] = Field(default="")
+    payment_method_title: Optional[str] = Field(default="")
+    transaction_id: Optional[str] = Field(default="")
+    customer_ip_address: Optional[str] = Field(default="")
+    customer_user_agent: Optional[str] = Field(default="")
+    created_via: Optional[str] = Field(default="")
+    customer_note: Optional[str] = Field(default="")
+    date_completed: Optional[str] = Field(default="")
+    date_created: Optional[str] = Field(default="")
+    date_modified: Optional[str] = Field(default="")
+    date_paid: Optional[str] = Field(default="")
+    cart_hash: Optional[str] = Field(default="")
+    number: Optional[str] = Field(default="")
+    payment_url: Optional[str] = Field(default="")
+    currency_symbol: Optional[str] = Field(default="")
+    
+
+class Order(OrderBase, table=True):
+    __tablename__ = "orders"
+    id: int = Field(primary_key=True)

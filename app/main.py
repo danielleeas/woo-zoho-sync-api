@@ -8,7 +8,7 @@ from app.services.crud import CRUDService
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Create the task but don't await it
-    category_task = asyncio.create_task(CRUDService().create_variations_products())
+    category_task = asyncio.create_task(CRUDService().create_orders())
     
     # Store the task in app state and continue immediately
     app.state.category_task = category_task

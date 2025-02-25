@@ -67,3 +67,30 @@ class WCMC:
             return response.json()
         except Exception as e:
             raise Exception(f"Error fetching categories: {str(e)}")
+    
+    async def get_orders(self, per_page: int = 100, page: int = 1):
+        try:
+            # Use asyncio.to_thread if the API call is blocking
+            response = await asyncio.to_thread(
+                self.wcapi.get,
+                "orders",
+                params={
+                    "per_page": per_page,
+                    "page": page,
+                    "status": "completed"
+                }
+            )
+            return response.json()
+        except Exception as e:
+            raise Exception(f"Error fetching orders: {str(e)}")
+    
+    async def get_customers(self, per_page: int = 100, page: int = 1):
+        try:
+            response = await asyncio.to_thread(
+                self.wcapi.get,
+                "customers",
+                params={"per_page": per_page, "page": page}
+            )
+            return response.json()
+        except Exception as e:
+            raise Exception(f"Error fetching customers: {str(e)}")

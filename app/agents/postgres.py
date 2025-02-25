@@ -5,6 +5,9 @@ from datetime import datetime
 from app.models.oauth import OAuth
 from app.models.category import Category, CategoryBase
 from app.models.product import Product, ProductBase
+from app.models.customer import Customer, CustomerBase
+from app.models.order import Order, OrderBase
+from app.models.line_items import LineItems, LineItemsBase
 
 class PostgresAgent:
     async def insert_oauth(self, access_token: str, refresh_token: str, expires_at: datetime):
@@ -98,5 +101,142 @@ class PostgresAgent:
         except Exception as e:
             raise Exception(f"Database error: {str(e)}")
         return None
-        
+    
+    async def insert_customer(self, customer: CustomerBase):
+        try:
+            async for db in get_session():
+                db_customer = Customer(
+                    woo_id=customer.woo_id,
+                    first_name=customer.first_name,
+                    last_name=customer.last_name,
+                    username=customer.username,
+                    email=customer.email,
+                    billing_first_name=customer.billing_first_name,
+                    billing_last_name=customer.billing_last_name,
+                    billing_company=customer.billing_company,
+                    billing_address_1=customer.billing_address_1,
+                    billing_address_2=customer.billing_address_2,
+                    billing_city=customer.billing_city,
+                    billing_postcode=customer.billing_postcode,
+                    billing_country=customer.billing_country,
+                    billing_state=customer.billing_state,
+                    billing_email=customer.billing_email,
+                    billing_phone=customer.billing_phone,
+                    shipping_first_name=customer.shipping_first_name,
+                    shipping_last_name=customer.shipping_last_name,
+                    shipping_company=customer.shipping_company,
+                    shipping_address_1=customer.shipping_address_1,
+                    shipping_address_2=customer.shipping_address_2,
+                    shipping_city=customer.shipping_city,
+                    shipping_postcode=customer.shipping_postcode,
+                    shipping_country=customer.shipping_country,
+                    shipping_state=customer.shipping_state,
+                    shipping_phone=customer.shipping_phone,
+                    is_paying_customer=customer.is_paying_customer,
+                    avatar_url=customer.avatar_url,
+                    created_at=customer.created_at,
+                    updated_at=customer.updated_at
+                )
+                db.add(db_customer)
+                try:
+                    await db.commit()
+                    await db.refresh(db_customer)
+                    return db_customer
+                except Exception as e:
+                    await db.rollback()
+                    raise Exception(f"Failed to insert customer: {str(e)}")
+        except Exception as e:
+            raise Exception(f"Database error: {str(e)}")
+        return None
+    
+    async def insert_order(self, order: OrderBase):
+        try:
+            async for db in get_session():
+                db_order = Order(
+                    customer_id=order.customer_id,
+                    currency=order.currency,
+                    prices_include_tax=order.prices_include_tax,
+                    discount_total=order.discount_total,
+                    discount_tax=order.discount_tax,
+                    shipping_total=order.shipping_total,
+                    shipping_tax=order.shipping_tax,
+                    cart_tax=order.cart_tax,
+                    total=order.total,
+                    total_tax=order.total_tax,
+                    order_key=order.order_key,
+                    billing_first_name=order.billing_first_name,
+                    billing_last_name=order.billing_last_name,
+                    billing_company=order.billing_company,
+                    billing_address_1=order.billing_address_1,
+                    billing_address_2=order.billing_address_2,
+                    billing_city=order.billing_city,
+                    billing_state=order.billing_state,
+                    billing_postcode=order.billing_postcode,
+                    billing_country=order.billing_country,
+                    billing_email=order.billing_email,
+                    billing_phone=order.billing_phone,
+                    shipping_first_name=order.shipping_first_name,
+                    shipping_last_name=order.shipping_last_name,
+                    shipping_company=order.shipping_company,
+                    shipping_address_1=order.shipping_address_1,
+                    shipping_address_2=order.shipping_address_2,
+                    shipping_city=order.shipping_city,
+                    shipping_state=order.shipping_state,
+                    shipping_postcode=order.shipping_postcode,
+                    shipping_country=order.shipping_country,
+                    transaction_id=order.transaction_id,
+                    customer_ip_address=order.customer_ip_address,
+                    customer_user_agent=order.customer_user_agent,
+                    created_via=order.created_via,
+                    customer_note=order.customer_note,
+                    date_completed=order.date_completed,
+                    date_created=order.date_created,
+                    date_modified=order.date_modified,
+                    date_paid=order.date_paid,
+                    cart_hash=order.cart_hash,
+                    number=order.number,
+                    payment_url=order.payment_url,
+                    currency_symbol=order.currency_symbol,
+                )
+                db.add(db_order)
+                try:
+                    await db.commit()
+                    await db.refresh(db_order)
+                    return db_order
+                except Exception as e:
+                    await db.rollback()
+                    raise Exception(f"Failed to insert order: {str(e)}")
+        except Exception as e:
+            raise Exception(f"Database error: {str(e)}")
+        return None
+
+    async def insert_order_line(self, order_line: LineItemsBase):
+        try:
+            async for db in get_session():
+                db_order_line = LineItems(
+                    order_id=order_line.order_id,
+                    name=order_line.name,
+                    product_id=order_line.product_id,
+                    variation_id=order_line.variation_id,
+                    quantity=order_line.quantity,
+                    tax_class=order_line.tax_class,
+                    subtotal=order_line.subtotal,
+                    subtotal_tax=order_line.subtotal_tax,
+                    total=order_line.total,
+                    total_tax=order_line.total_tax,
+                    sku=order_line.sku,
+                    price=order_line.price
+                )
+                db.add(db_order_line)
+                try:
+                    await db.commit()
+                    await db.refresh(db_order_line)
+                    return db_order_line
+                except Exception as e:
+                    await db.rollback()
+                    raise Exception(f"Failed to insert order line: {str(e)}")
+        except Exception as e:
+            raise Exception(f"Database error: {str(e)}")
+        return None
+                    
         
