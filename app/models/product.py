@@ -1,32 +1,33 @@
 import uuid
-from typing import Optional
+from typing import Optional, List
 from sqlmodel import SQLModel, Field
+from sqlalchemy import ARRAY, Column, String
 
 class ProductBase(SQLModel):
-    group_id: str = Field(index=True)
-    name: str = Field(max_length=255)
-    sku: str = Field(max_length=100, unique=True)
-    category_id: str = Field(index=True)
-    product_type: str = Field(max_length=50)
-    unit: str = Field(max_length=20)
-    status: str = Field(max_length=20, default="active")
-    description: Optional[str] = Field(default=None)
-    brand: Optional[str] = Field(default=None, max_length=100)
-    manufacturer: Optional[str] = Field(default=None, max_length=100)
-    rate: float = Field(ge=0)
-    purchase_rate: float = Field(ge=0)
-    tax_id: Optional[str] = Field(default=None)
-    initial_stock: float = Field(default=0, ge=0)
-    stock_on_hand: float = Field(default=0, ge=0)
-    available_stock: float = Field(default=0, ge=0)
-    actual_available_stock: float = Field(default=0, ge=0)    
-    length: Optional[str] = Field(default=None, max_length=20)
-    width: Optional[str] = Field(default=None, max_length=20)
-    height: Optional[str] = Field(default=None, max_length=20)
-    weight: Optional[str] = Field(default=None, max_length=20)
-    weight_unit: Optional[str] = Field(default=None, max_length=10)
-    dimension_unit: Optional[str] = Field(default=None, max_length=10)
+    parent_id: int = Field(index=True, nullable=True)
+    name: str = Field(index=True)
+    slug: str = Field(max_length=255)
+    permalink: str = Field(max_length=255, unique=True)
+    date_created: str = Field(index=True)
+    date_modified: str = Field(max_length=50)
+    type: str = Field(max_length=20, default="simple")
+    status: str = Field(max_length=20, default="publish")
+    featured: bool = Field(default=False)
+    description: str = Field(default="")
+    sku: str = Field(max_length=100)
+    price: str = Field(default="")
+    purchase_price: str = Field(default="")
+    regular_price: str = Field(default="")
+    stock_quantity: int = Field(ge=0)
+    weight: Optional[str] = Field(default="")
+    length: Optional[str] = Field(default="")
+    width: Optional[str] = Field(default="")
+    height: Optional[str] = Field(default="")
+    categories: List[str] = Field(sa_column=Column(ARRAY(String)), default=[])
+    images: List[str] = Field(sa_column=Column(ARRAY(String)), default=[])
+    attribute_name: str = Field(default="")
+    attribute_value: str = Field(default="")
 
 class Product(ProductBase, table=True):
     __tablename__ = "products"
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    id: int = Field(primary_key=True)

@@ -4,6 +4,7 @@ from datetime import datetime
 
 from app.models.oauth import OAuth
 from app.models.category import Category, CategoryBase
+from app.models.product import Product, ProductBase
 
 class PostgresAgent:
     async def insert_oauth(self, access_token: str, refresh_token: str, expires_at: datetime):
@@ -58,4 +59,44 @@ class PostgresAgent:
             result = (await db.exec(statement)).first()
             return result
         return None
+    
+    async def insert_product(self, product: ProductBase):
+        try:
+            async for db in get_session():
+                db_product = Product(
+                    parent_id=product.parent_id,
+                    name=product.name,
+                    slug=product.slug,
+                    permalink=product.permalink,
+                    date_created=product.date_created,
+                    date_modified=product.date_modified,
+                    type=product.type,
+                    status=product.status,
+                    featured=product.featured,
+                    description=product.description,
+                    sku=product.sku,
+                    price=product.price,
+                    regular_price=product.regular_price,
+                    stock_quantity=product.stock_quantity,
+                    weight=product.weight,
+                    length=product.length,
+                    width=product.width,
+                    height=product.height,
+                    categories=product.categories,
+                    images=product.images,
+                    attribute_name=product.attribute_name,
+                    attribute_value=product.attribute_value,
+                )
+                db.add(db_product)
+                try:
+                    await db.commit()
+                    await db.refresh(db_product)
+                    return db_product
+                except Exception as e:
+                    await db.rollback()
+                    raise Exception(f"Failed to insert product: {str(e)}")
+        except Exception as e:
+            raise Exception(f"Database error: {str(e)}")
+        return None
+        
         
