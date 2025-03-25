@@ -275,6 +275,48 @@ class CRUDService:
         print(f"Final totals - Total: {total_count}, Success: {success_count}, Failed: {failed_count}")
         return total_count
     
+    async def get_orders(self):
+        try:
+            orders = []
+            page = 1
+            per_page = 100
+            current_file_number = 1
+            orders_per_file = 100
+            
+            while True:
+                try:
+                    page_orders = await self.wcmc.get_orders(per_page, page)
+                    if not page_orders:  # If we get an empty response, we've reached the end
+                        break
+                    orders.extend(page_orders)
+                    while len(orders) >= orders_per_file:
+                        filename = f"data/wcmc/orders/orders_{current_file_number}.json"
+                        batch = orders[:orders_per_file]
+                        orders = orders[orders_per_file:]
+                        
+                        with open(filename, 'w', encoding='utf-8') as f:
+                            json.dump(batch, f, indent=4, ensure_ascii=False)
+                        
+                        print(f"Saved {filename}")
+                        current_file_number += 1
+                    page += 1
+                except Exception as e:
+                    print(f"Error on page {page}: {str(e)}")
+                    return {"error": str(e), "last_successful_page": page - 1}
+            
+                if orders:  # Save any remaining products
+                    filename = f"data/wcmc/orders/orders_{current_file_number}.json"
+                    with open(filename, 'w', encoding='utf-8') as f:
+                        json.dump(orders, f, indent=4, ensure_ascii=False)
+                        print(f"Saved {filename}")
+                        
+                    return {
+                        "success": True,
+                        "message": f"Orders saved to data/wcmc/orders/orders_1.json through data/wcmc/orders/orders_{current_file_number}.json"
+                    }
+        except Exception as e:
+            return {"error": f"Fatal error: {str(e)}"}
+    
     async def _save_order(self, order_data):
         """Helper method to create and save an order and its line items"""
         order_base = OrderBase(
@@ -385,7 +427,7 @@ class CRUDService:
     
     async def get_customers(self):
         page = 1
-        per_page = 20
+        per_page = 100
         customers = []
         current_file_number = 1
         customers_per_file = 100

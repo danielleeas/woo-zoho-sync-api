@@ -2,8 +2,9 @@ import asyncio
 from fastapi import FastAPI, Request
 from contextlib import asynccontextmanager
 
-from app.services.crud import CRUDService
-
+# from app.services.crud import CRUDService
+# from app.services.wcmc.product import ProductService
+# from app.services.wcmc.category import CategoryService
 from app.api.v1.oauth import zoho_router
 from app.api.v1.product import product_router
 from app.api.v1.order import order_router
@@ -12,7 +13,7 @@ from app.api.v1.hook import hook_router
 # @asynccontextmanager
 # async def lifespan(app: FastAPI):
 #     # Create the task but don't await it
-#     category_task = asyncio.create_task(CRUDService().create_orders())
+#     category_task = asyncio.create_task(CRUDService().create_customers())
     
 #     # Store the task in app state and continue immediately
 #     app.state.category_task = category_task
@@ -43,7 +44,7 @@ app = FastAPI()
 
 @app.get("/")
 async def root():
-    return {"message": "Hello World"}
+    return {"message": "Hello World Lee"}
 
 app.include_router(zoho_router, prefix="/api/v1")
 app.include_router(product_router, prefix="/api/v1")

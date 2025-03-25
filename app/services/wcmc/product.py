@@ -17,7 +17,7 @@ class ProductService:
             products_per_file = 100
             params = {
                 "status": "publish",
-                "type": "simple"
+                "type": "variable"
             }
             while True:
                 try:
@@ -26,7 +26,7 @@ class ProductService:
                         break
                     products.extend(page_products)
                     while len(products) >= products_per_file:
-                        filename = f"data/wcmc/simple/products_{current_file_number}.json"
+                        filename = f"data/wcmc/variable/products_{current_file_number}.json"
                         batch = products[:products_per_file]
                         products = products[products_per_file:]
                         
@@ -41,14 +41,14 @@ class ProductService:
                     return {"error": str(e), "last_successful_page": page - 1}
             
             if products:  # Save any remaining products
-                filename = f"data/wcmc/simple/products_{current_file_number}.json"
+                filename = f"data/wcmc/variable/products_{current_file_number}.json"
                 with open(filename, 'w', encoding='utf-8') as f:
                     json.dump(products, f, indent=4, ensure_ascii=False)
                 print(f"Saved {filename}")
                 
             return {
                 "success": True,
-                "message": f"Products saved to data/wcmc/simple/products_1.json through data/wcmc/simple/products_{current_file_number}.json"
+                "message": f"Products saved to data/wcmc/variable/products_1.json through data/wcmc/variable/products_{current_file_number}.json"
             }
             
         except Exception as e:
@@ -110,10 +110,10 @@ class ProductService:
         products_per_file = 100
         current_file_number = 1
         while True:
-            if not os.path.exists(f"data/wcmc/simple/products_{count}.json"):
+            if not os.path.exists(f"data/wcmc/cleaned/products_{count}.json"):
                 break
             
-            with open(f"data/wcmc/simple/products_{count}.json", "r") as f:
+            with open(f"data/wcmc/cleaned/products_{count}.json", "r") as f:
                 products = json.load(f)
                 
             for product in products:
@@ -155,15 +155,15 @@ class ProductService:
         
         print(f"Products described and saved to products_1.json through products_{current_file_number}.json")
         return {"success": True, "message": "Products described successfully"}
-            
+    
     async def check_null_sku(self):
         null_sku_products = []
         count = 1
         while True:
-            if not os.path.exists(f"data/wcmc/final/products_{count}.json"):
+            if not os.path.exists(f"data/wcmc/described/products_{count}.json"):
                 break
             
-            with open(f"data/wcmc/final/products_{count}.json", "r") as f:
+            with open(f"data/wcmc/described/products_{count}.json", "r") as f:
                 products = json.load(f)
                 
             for product in products:
@@ -185,10 +185,10 @@ class ProductService:
         sku_list = []
         unique_sku_products = []
         while True:
-            if not os.path.exists(f"data/wcmc/simple/products_{count}.json"):
+            if not os.path.exists(f"data/wcmc/described/products_{count}.json"):
                 break
             
-            with open(f"data/wcmc/simple/products_{count}.json", "r") as f:
+            with open(f"data/wcmc/described/products_{count}.json", "r") as f:
                 products = json.load(f)
                 
             for product in products:
@@ -201,10 +201,10 @@ class ProductService:
         duplicate_sku_products = []
         new_count = 1
         while True:
-            if not os.path.exists(f"data/wcmc/simple/products_{new_count}.json"):
+            if not os.path.exists(f"data/wcmc/described/products_{new_count}.json"):
                 break
             
-            with open(f"data/wcmc/simple/products_{new_count}.json", "r") as f:
+            with open(f"data/wcmc/described/products_{new_count}.json", "r") as f:
                 products = json.load(f)
                 
             for product in products:
@@ -216,7 +216,7 @@ class ProductService:
             
         
         if duplicate_sku_products:
-            filename = f"data/wcmc/duplicate_sku/duplicate_sku_products_{new_count}.json"
+            filename = f"data/wcmc/duplicate_sku/duplicate_sku_products.json"
             with open(filename, 'w', encoding='utf-8') as f:
                 json.dump(duplicate_sku_products, f, indent=4, ensure_ascii=False)
             print(f"Saved {filename}")
@@ -249,10 +249,10 @@ class ProductService:
         count = 1
         name_list = []
         while True:
-            if not os.path.exists(f"data/wcmc/simple/products_{count}.json"):
+            if not os.path.exists(f"data/wcmc/described/products_{count}.json"):
                 break
             
-            with open(f"data/wcmc/simple/products_{count}.json", "r") as f:
+            with open(f"data/wcmc/described/products_{count}.json", "r") as f:
                 products = json.load(f)
                 
             for product in products:
@@ -264,10 +264,10 @@ class ProductService:
         duplicate_name_products = []
         new_count = 1
         while True:
-            if not os.path.exists(f"data/wcmc/simple/products_{new_count}.json"):
+            if not os.path.exists(f"data/wcmc/described/products_{new_count}.json"):
                 break
             
-            with open(f"data/wcmc/simple/products_{new_count}.json", "r") as f:
+            with open(f"data/wcmc/described/products_{new_count}.json", "r") as f:
                 products = json.load(f)
                 
             for product in products:
