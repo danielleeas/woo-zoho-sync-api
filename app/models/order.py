@@ -4,6 +4,7 @@ from sqlmodel import SQLModel, Field
 from sqlalchemy import ARRAY, Column, String
 
 class OrderBase(SQLModel):
+    order_id: int = Field(index=True, nullable=True)
     customer_id: int = Field(index=True, nullable=True)
     currency: Optional[str] = Field(default="")
     prices_include_tax: Optional[bool] = Field(default=True)

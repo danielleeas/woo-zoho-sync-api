@@ -153,6 +153,7 @@ class PostgresAgent:
         try:
             async for db in get_session():
                 db_order = Order(
+                    order_id=order.order_id,
                     customer_id=order.customer_id,
                     currency=order.currency,
                     prices_include_tax=order.prices_include_tax,
@@ -276,7 +277,7 @@ class PostgresAgent:
     async def get_orders(self, page: int = 1, per_page: int = 10, filters: dict = None):
         async for db in get_session():
             # Join Order with LineItems
-            query = select(Order, LineItems).join(LineItems, Order.id == LineItems.order_id, isouter=True)
+            query = select(Order, LineItems).join(LineItems, Order.order_id == LineItems.order_id, isouter=True).order_by(Order.order_id.asc())
             
             # Apply dynamic filters if any
             if filters:
@@ -302,5 +303,16 @@ class PostgresAgent:
                     orders_dict[order.id]['line_items'].append(line_item.model_dump())
             
             return list(orders_dict.values())
+        return None
+    
+    async def get_order_by_id(self, order_id: int):
+        async for db in get_session():
+            statement = select(Order, LineItems).join(LineItems, Order.order_id == LineItems.order_id, isouter=True).where(Order.order_id == order_id)
+            result = (await db.exec(statement)).first()
+            order_dict = result[0].model_dump()
+            order_dict['line_items'] = []
+            if result[1]:
+                order_dict['line_items'].append(result[1].model_dump())
+            return order_dict
         return None
         

@@ -320,6 +320,7 @@ class CRUDService:
     async def _save_order(self, order_data):
         """Helper method to create and save an order and its line items"""
         order_base = OrderBase(
+            order_id=order_data["id"],
             customer_id=order_data["customer_id"],
             currency=order_data["currency"],
             total=order_data["total"],
@@ -378,7 +379,7 @@ class CRUDService:
             # Save each line item
             for item in order_data["line_items"]:
                 line_item = LineItemsBase(
-                    order_id=db_order.id,
+                    order_id=db_order.order_id,
                     name=item["name"],
                     product_id=item["product_id"],
                     variation_id=item["variation_id"],

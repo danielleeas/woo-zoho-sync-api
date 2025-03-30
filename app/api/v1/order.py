@@ -7,31 +7,7 @@ order_router = APIRouter()
 
 @order_router.get("/orders")
 async def get_orders(request: Request, page: int = 1, per_page: int = 10):
-    # Get all query parameters except page and per_page
-    filters = dict(request.query_params)
-    filters.pop('page', None)
-    filters.pop('per_page', None)
-    
-    # Convert filter values based on Product model field types
-    processed_filters = {}
-    for key, value in filters.items():
-        if hasattr(Order, key):
-            field_type = Order.__annotations__.get(key)
-            if field_type == int:
-                try:
-                    # Handle both single values and lists of values
-                    if isinstance(value, list):
-                        processed_filters[key] = [int(v) for v in value]
-                    else:
-                        processed_filters[key] = int(value)
-                except ValueError:
-                    continue
-            elif field_type == bool:
-                processed_filters[key] = value.lower() in ('true', '1', 'yes')
-            else:
-                processed_filters[key] = value
-    
-    orders: list[Order] = await PostgresAgent().get_orders(page, per_page, filters=processed_filters)
+    orders: list[Order] = await PostgresAgent().get_orders(page, per_page)
     
     return {
         "status": "success",
@@ -43,4 +19,19 @@ async def get_orders(request: Request, page: int = 1, per_page: int = 10):
                 "total": len(orders)
             }
         }
+    }
+
+@order_router.get("/orders/{order_id}")
+async def get_order_by_id(request: Request, order_id: int):
+    order: Order = await PostgresAgent().get_order_by_id(order_id)
+    
+    if not order:
+        return {
+            "status": "error",
+            "message": "Order not found"
+        }
+    
+    return {
+        "status": "success",
+        "order": order
     }

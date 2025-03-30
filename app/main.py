@@ -1,7 +1,8 @@
-import asyncpg
+# import asyncio
+# import asyncpg
 from fastapi import FastAPI, Request
 from contextlib import asynccontextmanager
-import psycopg2  # Add this import at the top
+# import psycopg2  # Add this import at the top
 
 # from app.services.crud import CRUDService
 # from app.services.wcmc.product import ProductService
@@ -14,7 +15,7 @@ from app.api.v1.hook import hook_router
 # @asynccontextmanager
 # async def lifespan(app: FastAPI):
 #     # Create the task but don't await it
-#     category_task = asyncio.create_task(CRUDService().create_customers())
+#     category_task = asyncio.create_task(CRUDService().create_orders())
     
 #     # Store the task in app state and continue immediately
 #     app.state.category_task = category_task
