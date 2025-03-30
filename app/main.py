@@ -1,6 +1,7 @@
-import asyncio
+import asyncpg
 from fastapi import FastAPI, Request
 from contextlib import asynccontextmanager
+import psycopg2  # Add this import at the top
 
 # from app.services.crud import CRUDService
 # from app.services.wcmc.product import ProductService
@@ -41,7 +42,7 @@ from app.api.v1.hook import hook_router
 
 app = FastAPI()
 # app = FastAPI(lifespan=lifespan)
-
+    
 @app.get("/")
 async def root():
     return {"message": "Hello World Lee"}
