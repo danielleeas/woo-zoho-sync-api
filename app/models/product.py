@@ -5,6 +5,7 @@ from sqlalchemy import ARRAY, Column, String
 
 class ProductBase(SQLModel):
     parent_id: int = Field(index=True, nullable=True)
+    product_id: int = Field(index=True, nullable=True)
     name: str = Field(index=True)
     slug: str = Field(max_length=255)
     permalink: str = Field(max_length=255, unique=True)

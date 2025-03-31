@@ -48,21 +48,35 @@ async def get_products(request: Request, page: int = 1, per_page: int = 10):
         }
     }
 
-@product_router.get("/products/search")
-async def search_products(name: str, page: int = 1, per_page: int = 10):
-    products: list[Product] = await PostgresAgent().search_products_by_name(name, page, per_page)
+@product_router.get("/products/{product_id}")
+async def get_product_by_id(request: Request, product_id: int):
+    product: Product = await PostgresAgent().get_product(product_id)
     
-    # Convert products to JSON-serializable format
-    products_json = [product.model_dump() if hasattr(product, 'model_dump') else vars(product) for product in products]
+    if not product:
+        return {
+            "status": "error",
+            "message": "Product not found"
+        }
     
     return {
         "status": "success",
-        "data": {
-            "products": products_json,
-            "pagination": {
-                "current_page": page,
-                "per_page": per_page,
-                "total": len(products)
-            }
-        }
+        "product": product
+    }
+
+@product_router.get("/products/{product_id}/variations")
+async def get_product_variations(request: Request, product_id: int):
+    variations: list[Product] = await PostgresAgent().get_product_variations(product_id)
+    
+    return {
+        "status": "success",
+        "variations": variations
+    }
+
+@product_router.get("/products/sku/{sku}")
+async def search_products(request: Request, sku: str):
+    product: Product = await PostgresAgent().search_products_by_sku(sku)
+    
+    return {
+        "status": "success",
+        "product": product
     }

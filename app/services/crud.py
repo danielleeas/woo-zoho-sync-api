@@ -108,6 +108,7 @@ class CRUDService:
         
         product_base = ProductBase(
             parent_id=product_data["parent_id"],
+            product_id=product_data["id"],
             name=product_data["name"],
             slug=product_data["slug"],
             permalink=product_data["permalink"],
@@ -247,15 +248,15 @@ class CRUDService:
             for product in products:
                 if product['type'] == 'variable':
                     db_product = await self._save_product(product)
-                    print("variable product saved: ", db_product.name, " - ", db_product.id)
                     if db_product:
+                        print("variable product saved: ", db_product.name, " - ", db_product.id)
                         filename = f"data/wcmc/variations/variations_{product['id']}.json"
                         if os.path.exists(filename):
                             with open(filename, 'r') as f:
                                 variations = json.load(f)
                             for variation in variations:
                                 variation['name'] = product['name']+" - "+variation['name']
-                                variation['parent_id'] = db_product.id
+                                variation['parent_id'] = product['id']
                                 variation['categories'] = product['categories']
                                 variation['images'] = [variation['image']] if variation['image'] else []
                                 variation['slug'] = product['slug'] + '-' + variation['name']
@@ -267,7 +268,7 @@ class CRUDService:
                         success_count += 1
                         total_count += 1
                     else:
-                        failed_products.append(variation)
+                        failed_products.append(product)
                         failed_count += 1
             
             count += 1

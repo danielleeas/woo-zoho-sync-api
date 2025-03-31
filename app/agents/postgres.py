@@ -68,6 +68,7 @@ class PostgresAgent:
             async for db in get_session():
                 db_product = Product(
                     parent_id=product.parent_id,
+                    product_id=product.product_id,
                     name=product.name,
                     slug=product.slug,
                     permalink=product.permalink,
@@ -259,7 +260,21 @@ class PostgresAgent:
     
     async def get_product(self, product_id: int):
         async for db in get_session():
-            statement = select(Product).where(Product.id == product_id)
+            statement = select(Product).where(Product.product_id == product_id)
+            result = (await db.exec(statement)).first()
+            return result
+        return None
+    
+    async def get_product_variations(self, product_id: int):
+        async for db in get_session():
+            statement = select(Product).where(Product.parent_id == product_id)
+            result = (await db.exec(statement)).all()
+            return result
+        return None
+    
+    async def search_products_by_sku(self, sku: str):
+        async for db in get_session():
+            statement = select(Product).where(Product.sku == sku)
             result = (await db.exec(statement)).first()
             return result
         return None

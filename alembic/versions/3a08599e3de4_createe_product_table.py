@@ -24,6 +24,7 @@ def upgrade() -> None:
         "products",
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("parent_id", sa.Integer(), nullable=True),
+        sa.Column("product_id", sa.Integer(), nullable=True),
         sa.Column("name", sa.String(), nullable=False),
         sa.Column("slug", sa.String(), nullable=False),
         sa.Column("permalink", sa.String(), nullable=False, unique=True),
