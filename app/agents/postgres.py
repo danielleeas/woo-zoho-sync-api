@@ -1,14 +1,17 @@
+from fastapi import HTTPException
 from sqlmodel import select
 from app.core.database import get_session
 from datetime import datetime
 
+from app.core.security import verify_password
 from app.models.oauth import OAuth
 from app.models.category import Category, CategoryBase
 from app.models.product import Product, ProductBase
 from app.models.customer import Customer, CustomerBase
 from app.models.order import Order, OrderBase
 from app.models.line_items import LineItems, LineItemsBase
-
+from app.models.user import User, UserLogin, UserCreate, UserPublic
+from app.core.security import get_password_hash
 class PostgresAgent:
     async def insert_oauth(self, access_token: str, refresh_token: str, expires_at: datetime):
         async for db in get_session():
@@ -330,4 +333,32 @@ class PostgresAgent:
                 order_dict['line_items'].append(result[1].model_dump())
             return order_dict
         return None
-        
+    
+    async def login_user(self, user: UserLogin):
+        async for db in get_session():
+            statement = select(User).where(User.email == user.email)
+            result = (await db.exec(statement)).first()
+            if not result:
+                raise HTTPException(status_code=401, detail="Invalid credentials")
+            if not verify_password(user.password, result.password):
+                raise HTTPException(status_code=401, detail="Invalid credentials")
+            return UserPublic(
+                id=result.id,
+                username=result.username,
+                email=result.email,
+                is_superuser=result.is_superuser,
+                is_active=result.is_active
+            )
+        return None
+    
+    async def create_user(self, user: UserCreate):
+        async for db in get_session():
+            db_user = User(
+                username=user.username,
+                email=user.email,
+                password=get_password_hash(user.password)
+            )
+            db.add(db_user)
+            await db.commit()
+            await db.refresh(db_user)
+            return db_user

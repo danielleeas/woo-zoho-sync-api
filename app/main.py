@@ -10,6 +10,7 @@ from app.api.v1.oauth import zoho_router
 from app.api.v1.product import product_router
 from app.api.v1.order import order_router
 from app.api.v1.hook import hook_router
+from app.api.v1.user import user_router
 
 # @asynccontextmanager
 # async def lifespan(app: FastAPI):
@@ -51,3 +52,4 @@ app.include_router(zoho_router, prefix="/api/v1")
 app.include_router(product_router, prefix="/api/v1")
 app.include_router(order_router, prefix="/api/v1")
 app.include_router(hook_router, prefix="/api/v1")
+app.include_router(user_router, prefix="/api/v1")
