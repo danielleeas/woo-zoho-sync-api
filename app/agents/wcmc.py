@@ -77,7 +77,6 @@ class WCMC:
                 params={
                     "per_page": per_page,
                     "page": page,
-                    "status": "completed"
                 }
             )
             return response.json()
@@ -94,3 +93,18 @@ class WCMC:
             return response.json()
         except Exception as e:
             raise Exception(f"Error fetching customers: {str(e)}")
+    
+    async def update_order_status(self, order_id: int, status: str):
+        try:
+            data={"status": status}
+            response = await self.wcapi.put(f"orders/{order_id}", data)
+            return response.json()
+        except Exception as e:
+            raise Exception(f"Error updating order status: {str(e)}")
+    
+    def track_order(self, order_id: int):
+        try:
+            response = self.wcapi.get(f"orders/{order_id}/notes")
+            return response.json()
+        except Exception as e:
+            raise Exception(f"Error tracking order: {str(e)}")

@@ -159,6 +159,7 @@ class PostgresAgent:
                 db_order = Order(
                     order_id=order.order_id,
                     customer_id=order.customer_id,
+                    status=order.status,
                     currency=order.currency,
                     prices_include_tax=order.prices_include_tax,
                     discount_total=order.discount_total,
@@ -362,3 +363,14 @@ class PostgresAgent:
             await db.commit()
             await db.refresh(db_user)
             return db_user
+    
+    async def update_order_status(self, order_id: int, status: str):
+        async for db in get_session():
+            statement = select(Order).where(Order.order_id == order_id)
+            result = (await db.exec(statement)).first()
+            if not result:
+                raise HTTPException(status_code=404, detail="Order not found")
+            result.status = status
+            await db.commit()
+            await db.refresh(result)
+            return result

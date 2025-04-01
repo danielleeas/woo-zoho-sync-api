@@ -23,6 +23,7 @@ def upgrade() -> None:
         'orders',
         sa.Column('id', sa.Integer, primary_key=True),
         sa.Column('order_id', sa.Integer, nullable=True, index=True),
+        sa.Column('status', sa.String, nullable=True),
         sa.Column('customer_id', sa.Integer, nullable=True),
         sa.Column('currency', sa.String, nullable=True),
         sa.Column('prices_include_tax', sa.Boolean, nullable=True, default=True),

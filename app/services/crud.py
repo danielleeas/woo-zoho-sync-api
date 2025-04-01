@@ -323,6 +323,7 @@ class CRUDService:
         order_base = OrderBase(
             order_id=order_data["id"],
             customer_id=order_data["customer_id"],
+            status=order_data["status"],
             currency=order_data["currency"],
             total=order_data["total"],
             order_key=order_data["order_key"],

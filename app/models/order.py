@@ -6,6 +6,7 @@ from sqlalchemy import ARRAY, Column, String
 class OrderBase(SQLModel):
     order_id: int = Field(index=True, nullable=True)
     customer_id: int = Field(index=True, nullable=True)
+    status: Optional[str] = Field(default="processing")
     currency: Optional[str] = Field(default="")
     prices_include_tax: Optional[bool] = Field(default=True)
     discount_total: Optional[str] = Field(default="")
