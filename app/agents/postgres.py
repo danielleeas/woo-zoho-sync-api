@@ -84,7 +84,7 @@ class PostgresAgent:
                     sku=product.sku,
                     price=product.price,
                     regular_price=product.regular_price,
-                    purchase_price=product.purchase_price,
+                    purchase_price=product.purchase_price if product.purchase_price else "",
                     stock_quantity=product.stock_quantity,
                     weight=product.weight,
                     length=product.length,
@@ -390,7 +390,8 @@ class PostgresAgent:
             statement = select(Product).where(Product.product_id == product_id)
             result = (await db.exec(statement)).first()
             if not result:
-                raise HTTPException(status_code=404, detail="Product not found")
+                result = await self.insert_product(product)
+                return result
             
             # Update the existing product's attributes
             result.parent_id = product.parent_id
