@@ -84,6 +84,7 @@ class PostgresAgent:
                     sku=product.sku,
                     price=product.price,
                     regular_price=product.regular_price,
+                    purchase_price=product.purchase_price if product.purchase_price else "",
                     stock_quantity=product.stock_quantity,
                     weight=product.weight,
                     length=product.length,
@@ -374,3 +375,127 @@ class PostgresAgent:
             await db.commit()
             await db.refresh(result)
             return result
+        
+    async def delete_product(self, product_id: int):
+        async for db in get_session():
+            statement = select(Product).where(Product.product_id == product_id)
+            result = (await db.exec(statement)).first()
+            if not result:
+                raise HTTPException(status_code=404, detail="Product not found")
+            await db.delete(result)
+            await db.commit()
+            return True
+    async def update_product(self, product_id: int, product: ProductBase):
+        async for db in get_session():
+            statement = select(Product).where(Product.product_id == product_id)
+            result = (await db.exec(statement)).first()
+            if not result:
+                result = await self.insert_product(product)
+                return result
+            
+            # Update the existing product's attributes
+            result.parent_id = product.parent_id
+            result.product_id = product.product_id
+            result.name = product.name
+            result.slug = product.slug
+            result.permalink = product.permalink
+            result.date_created = product.date_created
+            result.date_modified = product.date_modified
+            result.type = product.type
+            result.status = product.status
+            result.featured = product.featured
+            result.description = product.description
+            result.sku = product.sku
+            result.price = product.price
+            result.regular_price = product.regular_price
+            result.stock_quantity = product.stock_quantity
+            result.weight = product.weight
+            result.length = product.length
+            result.width = product.width
+            result.height = product.height
+            result.categories = product.categories
+            result.images = product.images
+            result.attribute_name = product.attribute_name
+            result.attribute_value = product.attribute_value
+            
+            await db.commit()
+            await db.refresh(result)
+            return result
+    
+    async def update_order(self, order_id: int, order: OrderBase):
+        async for db in get_session():
+            statement = select(Order).where(Order.order_id == order_id)
+            result = (await db.exec(statement)).first()
+            if not result:
+                raise HTTPException(status_code=404, detail="Order not found")
+            result.status = order.status
+            result.currency = order.currency
+            result.prices_include_tax = order.prices_include_tax
+            result.discount_total = order.discount_total
+            result.discount_tax = order.discount_tax
+            result.shipping_total = order.shipping_total
+            result.shipping_tax = order.shipping_tax
+            result.cart_tax = order.cart_tax
+            result.total = order.total
+            result.total_tax = order.total_tax
+            result.order_key = order.order_key
+            result.billing_first_name = order.billing_first_name
+            result.billing_last_name = order.billing_last_name
+            result.billing_company = order.billing_company
+            result.billing_address_1 = order.billing_address_1
+            result.billing_address_2 = order.billing_address_2
+            result.billing_city = order.billing_city
+            result.billing_state = order.billing_state
+            result.billing_postcode = order.billing_postcode
+            result.billing_country = order.billing_country
+            result.billing_email = order.billing_email
+            result.billing_phone = order.billing_phone
+            result.shipping_first_name = order.shipping_first_name
+            result.shipping_last_name = order.shipping_last_name
+            result.shipping_company = order.shipping_company
+            result.shipping_address_1 = order.shipping_address_1
+            result.shipping_address_2 = order.shipping_address_2
+            result.shipping_city = order.shipping_city
+            result.shipping_state = order.shipping_state
+            result.shipping_postcode = order.shipping_postcode
+            result.shipping_country = order.shipping_country
+            result.transaction_id = order.transaction_id
+            result.customer_ip_address = order.customer_ip_address
+            result.customer_user_agent = order.customer_user_agent
+            result.created_via = order.created_via
+            result.customer_note = order.customer_note
+            result.date_completed = order.date_completed
+            result.date_created = order.date_created
+            result.date_modified = order.date_modified
+            result.date_paid = order.date_paid
+            result.cart_hash = order.cart_hash
+            result.number = order.number
+            result.payment_url = order.payment_url
+            result.currency_symbol = order.currency_symbol
+            
+            await db.commit()
+            await db.refresh(result)
+            return result
+    
+    async def delete_order(self, order_id: int):
+        async for db in get_session():
+            statement = select(Order).where(Order.order_id == order_id)
+            result = (await db.exec(statement)).first()
+            if not result:
+                raise HTTPException(status_code=404, detail="Order not found")
+            await db.delete(result)
+            await db.commit()
+            await self.delete_order_line(order_id)
+            return True
+    
+    async def delete_order_line(self, order_id: int):
+        async for db in get_session():
+            statement = select(LineItems).where(LineItems.order_id == order_id)
+            results = (await db.exec(statement)).all()
+            if not results:
+                raise HTTPException(status_code=404, detail="Order line not found")
+            for item in results:
+                await db.delete(item)
+            await db.commit()
+            return True
+    

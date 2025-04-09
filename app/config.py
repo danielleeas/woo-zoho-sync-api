@@ -2,6 +2,7 @@ import os
 import secrets
 from pydantic_settings import BaseSettings
 from dotenv import load_dotenv
+from functools import lru_cache
 
 load_dotenv()
 
@@ -21,10 +22,16 @@ class Settings(BaseSettings):
     
     class Config:
         env_file = ".env"
-    
-    def refresh(self):
-        """Reload environment variables"""
-        load_dotenv(override=True)
-        return Settings()
 
-settings = Settings()
+def reload_env():
+    """Reload environment variables from .env file"""
+    load_dotenv(override=True)
+
+@lru_cache()
+def get_settings() -> Settings:
+    """Get cached settings instance"""
+    reload_env()
+    return Settings()
+
+# For backward compatibility
+settings = get_settings()
