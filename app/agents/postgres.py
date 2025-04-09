@@ -84,6 +84,7 @@ class PostgresAgent:
                     sku=product.sku,
                     price=product.price,
                     regular_price=product.regular_price,
+                    purchase_price=product.purchase_price,
                     stock_quantity=product.stock_quantity,
                     weight=product.weight,
                     length=product.length,
@@ -371,6 +372,51 @@ class PostgresAgent:
             if not result:
                 raise HTTPException(status_code=404, detail="Order not found")
             result.status = status
+            await db.commit()
+            await db.refresh(result)
+            return result
+        
+    async def delete_product(self, product_id: int):
+        async for db in get_session():
+            statement = select(Product).where(Product.product_id == product_id)
+            result = (await db.exec(statement)).first()
+            if not result:
+                raise HTTPException(status_code=404, detail="Product not found")
+            await db.delete(result)
+            await db.commit()
+            return True
+    async def update_product(self, product_id: int, product: ProductBase):
+        async for db in get_session():
+            statement = select(Product).where(Product.product_id == product_id)
+            result = (await db.exec(statement)).first()
+            if not result:
+                raise HTTPException(status_code=404, detail="Product not found")
+            
+            # Update the existing product's attributes
+            result.parent_id = product.parent_id
+            result.product_id = product.product_id
+            result.name = product.name
+            result.slug = product.slug
+            result.permalink = product.permalink
+            result.date_created = product.date_created
+            result.date_modified = product.date_modified
+            result.type = product.type
+            result.status = product.status
+            result.featured = product.featured
+            result.description = product.description
+            result.sku = product.sku
+            result.price = product.price
+            result.regular_price = product.regular_price
+            result.stock_quantity = product.stock_quantity
+            result.weight = product.weight
+            result.length = product.length
+            result.width = product.width
+            result.height = product.height
+            result.categories = product.categories
+            result.images = product.images
+            result.attribute_name = product.attribute_name
+            result.attribute_value = product.attribute_value
+            
             await db.commit()
             await db.refresh(result)
             return result

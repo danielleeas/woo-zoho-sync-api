@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request, HTTPException
 from app.agents.postgres import PostgresAgent
 from app.config import settings
-from app.models.user import UserCreate, UserPublic
+from app.models.user import UserCreate, UserPublic, UserLogin
 from app.core.security import create_access_token
 from datetime import timedelta
 from typing import Any
@@ -14,7 +14,7 @@ async def register_user(request: Request, user: UserCreate):
     return await PostgresAgent().create_user(user)
 
 @user_router.post("/login")
-async def login_user(request: Request, user: UserCreate):
+async def login_user(request: Request, user: UserLogin):
     user: UserPublic = await PostgresAgent().login_user(user)
     if not user:
         raise HTTPException(status_code=401, detail="Invalid credentials")
