@@ -3,6 +3,8 @@ import unicodedata
 from bs4 import BeautifulSoup
 
 from app.agents.postgres import PostgresAgent
+from app.models.line_items import LineItemsBase
+from app.models.order import OrderBase
 from app.models.product import ProductBase
 
 class SyncService:
@@ -80,6 +82,7 @@ class SyncService:
         except Exception as e:
             print(f"Error deleting product: {e}")
             return False
+    
     async def sync_update_product(self, product_data: dict):
         categories = [category["slug"] for category in product_data["categories"]]
         images = []
@@ -142,4 +145,170 @@ class SyncService:
         except Exception as e:
             print(f"Error inserting product: {e}")
             return False
+    
+    async def sync_create_order(self, order_data: dict):
+        try:
+            order_base = OrderBase(
+                order_id=order_data["id"],
+                customer_id=order_data["customer_id"],
+                status=order_data["status"],
+                currency=order_data["currency"],
+                total=order_data["total"],
+                order_key=order_data["order_key"],
+                prices_include_tax=order_data["prices_include_tax"],
+                discount_total=order_data["discount_total"],
+                discount_tax=order_data["discount_tax"],
+                shipping_total=order_data["shipping_total"],
+                shipping_tax=order_data["shipping_tax"],
+                cart_tax=order_data["cart_tax"],
+                total_tax=order_data["total_tax"],
+                billing_first_name=order_data["billing"]["first_name"],
+                billing_last_name=order_data["billing"]["last_name"],
+                billing_company=order_data["billing"]["company"],
+                billing_address_1=order_data["billing"]["address_1"],
+                billing_address_2=order_data["billing"]["address_2"],
+                billing_city=order_data["billing"]["city"],
+                billing_state=order_data["billing"]["state"],
+                billing_postcode=order_data["billing"]["postcode"],
+                billing_country=order_data["billing"]["country"],
+                billing_email=order_data["billing"]["email"],
+                billing_phone=order_data["billing"]["phone"],
+                shipping_first_name=order_data["shipping"]["first_name"],
+                shipping_last_name=order_data["shipping"]["last_name"],
+                shipping_company=order_data["shipping"]["company"],
+                shipping_address_1=order_data["shipping"]["address_1"],
+                shipping_address_2=order_data["shipping"]["address_2"],
+                shipping_city=order_data["shipping"]["city"],
+                shipping_state=order_data["shipping"]["state"],
+                shipping_postcode=order_data["shipping"]["postcode"],
+                shipping_country=order_data["shipping"]["country"],
+                payment_method=order_data["payment_method"],
+                payment_method_title=order_data["payment_method_title"],
+                transaction_id=order_data["transaction_id"],
+                customer_ip_address=order_data["customer_ip_address"],
+                customer_user_agent=order_data["customer_user_agent"],
+                created_via=order_data["created_via"],
+                customer_note=order_data["customer_note"],
+                date_completed=order_data["date_completed"],
+                date_created=order_data["date_created"],
+                date_modified=order_data["date_modified"],
+                date_paid=order_data["date_paid"],
+                cart_hash=order_data["cart_hash"],
+                number=order_data["number"],
+                payment_url=order_data["payment_url"],
+                currency_symbol=order_data["currency_symbol"],
+            )
+            db_order = await self.postgres.insert_order(order_base)
+            if not db_order:
+                return False, order_base
+            
+            for item in order_data["line_items"]:
+                line_item = LineItemsBase(
+                    order_id=db_order.order_id,
+                    name=item["name"],
+                    product_id=item["product_id"],
+                    variation_id=item["variation_id"],
+                    quantity=item["quantity"],
+                    tax_class=item["tax_class"],
+                    subtotal=item["subtotal"],
+                    subtotal_tax=item["subtotal_tax"],
+                    total=item["total"],
+                    total_tax=item["total_tax"],
+                    sku=item["sku"],
+                    price=int(float(item["price"])) if item["price"] else 0
+                )
+                await self.postgres.insert_order_line(line_item)
+                
+            return True, db_order
+        except Exception as e:
+            print(f"Error inserting order: {e}")
+            return False
+    
+    async def sync_update_order(self, order_data: dict):
+        try:
+            order_base = OrderBase(
+                order_id=order_data["id"],
+                customer_id=order_data["customer_id"],
+                status=order_data["status"],
+                currency=order_data["currency"],
+                total=order_data["total"],
+                order_key=order_data["order_key"],
+                prices_include_tax=order_data["prices_include_tax"],
+                discount_total=order_data["discount_total"],
+                discount_tax=order_data["discount_tax"],
+                shipping_total=order_data["shipping_total"],
+                shipping_tax=order_data["shipping_tax"],
+                cart_tax=order_data["cart_tax"],
+                total_tax=order_data["total_tax"],
+                billing_first_name=order_data["billing"]["first_name"],
+                billing_last_name=order_data["billing"]["last_name"],
+                billing_company=order_data["billing"]["company"],
+                billing_address_1=order_data["billing"]["address_1"],
+                billing_address_2=order_data["billing"]["address_2"],
+                billing_city=order_data["billing"]["city"],
+                billing_state=order_data["billing"]["state"],
+                billing_postcode=order_data["billing"]["postcode"],
+                billing_country=order_data["billing"]["country"],
+                billing_email=order_data["billing"]["email"],
+                billing_phone=order_data["billing"]["phone"],
+                shipping_first_name=order_data["shipping"]["first_name"],
+                shipping_last_name=order_data["shipping"]["last_name"],
+                shipping_company=order_data["shipping"]["company"],
+                shipping_address_1=order_data["shipping"]["address_1"],
+                shipping_address_2=order_data["shipping"]["address_2"],
+                shipping_city=order_data["shipping"]["city"],
+                shipping_state=order_data["shipping"]["state"],
+                shipping_postcode=order_data["shipping"]["postcode"],
+                shipping_country=order_data["shipping"]["country"],
+                payment_method=order_data["payment_method"],
+                payment_method_title=order_data["payment_method_title"],
+                transaction_id=order_data["transaction_id"],
+                customer_ip_address=order_data["customer_ip_address"],
+                customer_user_agent=order_data["customer_user_agent"],
+                created_via=order_data["created_via"],
+                customer_note=order_data["customer_note"],
+                date_completed=order_data["date_completed"],
+                date_created=order_data["date_created"],
+                date_modified=order_data["date_modified"],
+                date_paid=order_data["date_paid"],
+                cart_hash=order_data["cart_hash"],
+                number=order_data["number"],
+                payment_url=order_data["payment_url"],
+                currency_symbol=order_data["currency_symbol"],
+            )
+            
+            db_order = await self.postgres.update_order(order_data["id"], order_base)
+            if not db_order:
+                return False, order_base
+            
+            await self.postgres.delete_order_line(order_data["id"])
+            
+            for item in order_data["line_items"]:
+                line_item = LineItemsBase(
+                    order_id=db_order.order_id,
+                    name=item["name"],
+                    product_id=item["product_id"],
+                    variation_id=item["variation_id"],
+                    quantity=item["quantity"],
+                    tax_class=item["tax_class"],
+                    subtotal=item["subtotal"],
+                    subtotal_tax=item["subtotal_tax"],
+                    total=item["total"],
+                    total_tax=item["total_tax"],
+                    sku=item["sku"],
+                    price=int(float(item["price"])) if item["price"] else 0
+                )
+                await self.postgres.insert_order_line(line_item)
+        except Exception as e:
+            print(f"Error inserting order: {e}")
+            return False
+    
+    async def sync_delete_order(self, order_id: int):
+        try:
+            await self.postgres.delete_order(order_id)
+            return True
+        except Exception as e:
+            print(f"Error deleting order: {e}")
+            return False
+    
 
