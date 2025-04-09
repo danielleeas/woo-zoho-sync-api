@@ -173,6 +173,34 @@ async def webhook_woocommerce_order_update(request: Request):
         print(f"Error processing webhook: {str(e)}. Raw body:", body)
         return {"error": "Error processing webhook"}, 400
 
+@hook_router.post("/webhook/woocommerce/order/restored")
+async def webhook_woocommerce_order_restored(request: Request):
+    try:
+        # First try to parse as JSON
+        try:
+            payload = await request.json()
+        except json.JSONDecodeError:
+            # If JSON parsing fails, try form data
+            form_data = await request.form()
+            payload = dict(form_data)
+        
+        print(json.dumps(payload, indent=2))
+        
+        order_id = payload.get("id")
+        webhook_id = payload.get("webhook_id")
+        
+        if order_id:
+            await SyncService().sync_create_order(payload)
+        else:
+            print(f"Order Restored Webhook Received (Webhook ID: {webhook_id})")
+        
+        return {"message": "Webhook received successfully"}
+    except Exception as e:
+        # Log any other errors
+        body = await request.body()
+        print(f"Error processing webhook: {str(e)}. Raw body:", body)
+        return {"error": "Error processing webhook"}, 400
+    
 @hook_router.post("/webhook/woocommerce/order/delete")
 async def webhook_woocommerce_order_delete(request: Request):
     try:
