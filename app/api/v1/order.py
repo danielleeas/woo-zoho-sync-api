@@ -4,9 +4,9 @@ from app.agents.wcmc import WCMC
 from app.models.order import Order
 from app.api.deps import CurrentUser
 
-order_router = APIRouter()
+order_router = APIRouter(prefix="/orders", tags=["Orders"])
 
-@order_router.get("/orders")
+@order_router.get("/")
 async def get_orders(request: Request, current_user: CurrentUser, page: int = 1, per_page: int = 10):
     orders: list[Order] = await PostgresAgent().get_orders(page, per_page)
     
@@ -22,7 +22,7 @@ async def get_orders(request: Request, current_user: CurrentUser, page: int = 1,
         }
     }
 
-@order_router.get("/orders/{order_id}")
+@order_router.get("/{order_id}")
 async def get_order_by_id(request: Request, order_id: int, current_user: CurrentUser):
     order: Order = await PostgresAgent().get_order_by_id(order_id)
     
@@ -37,7 +37,7 @@ async def get_order_by_id(request: Request, order_id: int, current_user: Current
         "order": order
     }
 
-@order_router.post("/orders/{order_id}/status")
+@order_router.post("/{order_id}/status")
 async def update_order_status(request: Request, order_id: int, status: str, current_user: CurrentUser):
     order: Order = await PostgresAgent().update_order_status(order_id, status)
     
@@ -54,7 +54,7 @@ async def update_order_status(request: Request, order_id: int, status: str, curr
         "order": order
     }
 
-@order_router.get("/orders/{order_id}/track")
+@order_router.get("/{order_id}/track")
 async def track_order(request: Request, order_id: int, current_user: CurrentUser):
     order: Order = await PostgresAgent().get_order_by_id(order_id)
     

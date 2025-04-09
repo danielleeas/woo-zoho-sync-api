@@ -1,12 +1,13 @@
 from fastapi import APIRouter, Request
 
 from app.agents.postgres import PostgresAgent
+from app.api.deps import CurrentUser
 from app.models.product import Product
 
-product_router = APIRouter()
+product_router = APIRouter(prefix="/products", tags=["Products"])
 
-@product_router.get("/products")
-async def get_products(request: Request, page: int = 1, per_page: int = 10):
+@product_router.get("/")
+async def get_products(request: Request, current_user: CurrentUser, page: int = 1, per_page: int = 10):
     # Get all query parameters except page and per_page
     filters = dict(request.query_params)
     filters.pop('page', None)
@@ -48,8 +49,8 @@ async def get_products(request: Request, page: int = 1, per_page: int = 10):
         }
     }
 
-@product_router.get("/products/{product_id}")
-async def get_product_by_id(request: Request, product_id: int):
+@product_router.get("/{product_id}")
+async def get_product_by_id(request: Request, product_id: int, current_user: CurrentUser):
     product: Product = await PostgresAgent().get_product(product_id)
     
     if not product:
@@ -63,8 +64,8 @@ async def get_product_by_id(request: Request, product_id: int):
         "product": product
     }
 
-@product_router.get("/products/{product_id}/variations")
-async def get_product_variations(request: Request, product_id: int):
+@product_router.get("/{product_id}/variations")
+async def get_product_variations(request: Request, product_id: int, current_user: CurrentUser):
     variations: list[Product] = await PostgresAgent().get_product_variations(product_id)
     
     return {
@@ -72,8 +73,8 @@ async def get_product_variations(request: Request, product_id: int):
         "variations": variations
     }
 
-@product_router.get("/products/sku/{sku}")
-async def search_products(request: Request, sku: str):
+@product_router.get("/sku/{sku}")
+async def get_products_by_sku(request: Request, sku: str, current_user: CurrentUser):
     product: Product = await PostgresAgent().search_products_by_sku(sku)
     
     return {

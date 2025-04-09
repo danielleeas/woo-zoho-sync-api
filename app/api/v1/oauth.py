@@ -3,9 +3,9 @@ from fastapi import APIRouter, Request
 from app.agents.zoho import ZohoAgent
 from app.agents.postgres import PostgresAgent
 
-zoho_router = APIRouter()
+zoho_router = APIRouter(prefix="/oauth", tags=["OAuth"])
 
-@zoho_router.get("/oauth/callback")
+@zoho_router.get("/callback")
 async def oauth_callback(request: Request):
     code = request.query_params.get('code')
     if not code:
